@@ -7,3 +7,7 @@
   - 팩토리 패턴
  
   - 전략 패턴
+
+- [2장 - 네트워크](https://github.com/SeungWoo-Ahn/Computer_Science_Study/tree/main/Network)
+
+  - 네트워크 기초   
