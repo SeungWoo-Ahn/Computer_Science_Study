@@ -28,6 +28,8 @@
 
   - IP 주소
 
+  - HTTP
+
 - [자바와 코틀린](https://github.com/SeungWoo-Ahn/Computer_Science_Study/tree/main/JavaKotlin/src)
 
   - 프로그래밍 패러다임
