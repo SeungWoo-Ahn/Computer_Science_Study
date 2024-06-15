@@ -43,3 +43,5 @@
   - equals와 hashCode
 
   - 오버로딩과 오버라이딩
+
+  - Primitive 타입과 Reference 타입
