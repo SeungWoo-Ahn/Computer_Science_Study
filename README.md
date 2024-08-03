@@ -34,6 +34,12 @@
 
   - 운영체제와 컴퓨터
 
+  - 메모리
+
+  - 프로세스와 스레드
+
+  - CPU 스케줄링 알고리즘
+
 - [자바와 코틀린](https://github.com/SeungWoo-Ahn/Computer_Science_Study/tree/main/JavaKotlin/src)
 
   - 프로그래밍 패러다임
