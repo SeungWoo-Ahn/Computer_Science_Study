@@ -1,3 +1,5 @@
+import java.util.Arrays;
+
 interface MList<E> {
     boolean add(E e);
     void add(int index, E e);
@@ -20,7 +22,7 @@ interface MList<E> {
 
 public class MArrayList<E> implements MList<E> {
 
-    private static final int DEFAULT_CAPACITY = 10; //기본 용량
+    private static final int DEFAULT_CAPACITY = 5; //기본 용량
     private static final Object[] EMPTY_ELEMENT_DATA = {}; // 빈 배열
 
     private int size; // elementData 배열의 총 개수
@@ -31,7 +33,8 @@ public class MArrayList<E> implements MList<E> {
     * 디폴트 용량으로 초기화
     * */
     public MArrayList() {
-
+        elementData = new Object[DEFAULT_CAPACITY];
+        size = 0;
     }
 
     /*
@@ -41,7 +44,14 @@ public class MArrayList<E> implements MList<E> {
     * capacity 음수일 경우 RuntimeException 의 IllegalAccessException 주기
     * */
     public MArrayList(int capacity) {
-
+        if (capacity > 0) {
+            elementData = new Object[capacity];
+        } else if (capacity == 0) {
+            elementData = new Object[DEFAULT_CAPACITY];
+        } else {
+            throw new RuntimeException(new IllegalAccessException());
+        }
+        size = 0;
     }
 
     /*
@@ -55,17 +65,30 @@ public class MArrayList<E> implements MList<E> {
         * 1. 현재 용량의 두 배로 설정
         * 2. 복사할 배열을 두 배로 설정한 용량만큼 설정하고, elementData 원소들을 전체 복사해넣고 반환
         * */
+        if (element_capacity == size) {
+            int doubled_capacity = element_capacity * 2;
+            elementData = Arrays.copyOf(elementData, doubled_capacity);
+            return;
+        }
 
         /*
         * 용량에 비해 데이터가 적은 경우
         * 1. 개수가 용량 절반보다 적다면, 절반 용량을 만듦
         * 2. 절반 용량과 디폴트 용량 중 큰 값을 용량으로 설정해 배열을 복사한 후 반환
         * */
+        if ((element_capacity / 2) > size) {
+            int half_capacity = element_capacity / 2;
+            elementData = Arrays.copyOf(elementData, Math.max(half_capacity, DEFAULT_CAPACITY));
+            return;
+        }
 
         /*
         * 들어있는 데이터가 하나도 없을 경우
         * 1. 현재 빈 배열일 경우, 다시 기본 용량으로 초기화 후 반환
         * */
+        if (element_capacity == 0) {
+            elementData = new Object[DEFAULT_CAPACITY];
+        }
     }
 
     /*
@@ -74,6 +97,9 @@ public class MArrayList<E> implements MList<E> {
     * */
     @Override
     public boolean add(E e) {
+        resize();
+        elementData[size] = e;
+        size++;
         return true;
     }
 
@@ -86,7 +112,9 @@ public class MArrayList<E> implements MList<E> {
         * 인덱스가 음수이거나, 배열 크기를 벗어난 경우
         * IndexOutOfBoundsException 발생
         * */
-
+        if (index < 0 || index > size) {
+            throw new IndexOutOfBoundsException();
+        }
         /*
         * 인덱스가 마지막 위치일 경우, 그냥 추가함
         * 인덱스가 중간 위치일 경우
@@ -94,6 +122,16 @@ public class MArrayList<E> implements MList<E> {
         * 2. 맨 뒤에서부터 index 바로 뒤까지 한 칸씩 뒤로 밀어 빈 공간 만들기
         * 3. index 에 해당 데이터 삽입함
         * */
+        if (index == size) {
+            add(e);
+        } else {
+            resize();
+            for (int i = size; i > index; i--) {
+                elementData[i] = elementData[i - 1];
+            }
+            elementData[index] = e;
+            size++;
+        }
     }
 
     /*
@@ -104,7 +142,10 @@ public class MArrayList<E> implements MList<E> {
     * */
     @Override
     public boolean remove(Object o) {
-        return false;
+        int index = indexOf(o);
+        if (index == -1) return false;
+        remove(index);
+        return true;
     }
 
     /*
@@ -118,8 +159,20 @@ public class MArrayList<E> implements MList<E> {
     * 7. 백업한 삭제된 요소를 반환
     * */
     @Override
+    @SuppressWarnings("unchecked")
     public E remove(int index) {
-        return null;
+        if (index < 0 || index >= size) {
+            throw new IndexOutOfBoundsException();
+        }
+        E element = (E) elementData[index];
+        elementData[index] = null;
+        for (int i = index; i < size - 1; i++) {
+            elementData[i] = elementData[i + 1];
+            elementData[i + 1] = null;
+        }
+        size--;
+        resize();
+        return element;
     }
 
     /*
@@ -128,8 +181,12 @@ public class MArrayList<E> implements MList<E> {
     * 2. 요소값 반환 (형변환 필요)
     * */
     @Override
+    @SuppressWarnings("unchecked")
     public E get(int index) {
-        return null;
+        if (index < 0 || index >= size) {
+            throw new IndexOutOfBoundsException();
+        }
+        return (E) elementData[index];
     }
 
     /*
@@ -139,7 +196,10 @@ public class MArrayList<E> implements MList<E> {
     * */
     @Override
     public void set(int index, E e) {
-
+        if (index < 0 || index >= size) {
+            throw new IndexOutOfBoundsException();
+        }
+        elementData[index] = e;
     }
 
     /*
@@ -148,7 +208,7 @@ public class MArrayList<E> implements MList<E> {
     * */
     @Override
     public boolean contains(Object o) {
-        return false;
+        return indexOf(o) >= 0;
     }
 
     /*
@@ -156,13 +216,21 @@ public class MArrayList<E> implements MList<E> {
     * */
     @Override
     public int indexOf(Object o) {
-
-        // 매개변수가 null 일 경우 (ArrayList 는 null 도 저장 가능하기 때문에)
-
-        // 매개변수가 실질적인 값일 경우
-
+        if (o == null) { // 매개변수가 null 일 경우 (ArrayList 는 null 도 저장 가능하기 때문에)
+            for (int i = 0; i < size; i++) {
+                if (elementData[i] == null) {
+                    return i;
+                }
+            }
+        } else { // 매개변수가 실질적인 값일 경우
+            for (int i = 0; i < size; i++) {
+                if (elementData[i].equals(o)) {
+                    return i;
+                }
+            }
+        }
         // 찾는 값이 없는 경우 -1 반환
-        return 0;
+        return -1;
     }
 
     /*
@@ -170,17 +238,30 @@ public class MArrayList<E> implements MList<E> {
     * */
     @Override
     public int lastIndexOf(Object o) {
-        return 0;
+        if (o == null) {
+            for (int i = size - 1; i >= 0; i--) {
+                if (elementData[i] == null) {
+                    return i;
+                }
+            }
+        } else {
+            for (int i = size - 1; i >= 0; i--) {
+                if (elementData[i].equals(o)) {
+                    return i;
+                }
+            }
+        }
+        return -1;
     }
 
     @Override
     public int size() {
-        return 0;
+        return size;
     }
 
     @Override
     public boolean isEmpty() {
-        return false;
+        return size == 0;
     }
 
     /*
@@ -190,7 +271,36 @@ public class MArrayList<E> implements MList<E> {
     * */
     @Override
     public void clear() {
+        elementData = new Object[DEFAULT_CAPACITY];
+        size = 0;
+    }
 
+    @Override
+    public String toString() {
+        return Arrays.toString(elementData);
+    }
+}
+
+class MArrayListTest {
+    public static void main(String[] args) {
+        MArrayList<Integer> list = new MArrayList<>();
+        list.add(1);
+        list.add(2);
+        list.add(3);
+        list.add(1, 4);
+        list.add(5);
+        list.add(3, 6);
+        System.out.println(list);
+
+        list.remove(1);
+        list.remove(Integer.valueOf(5));
+        System.out.println(list);
+
+        list.set(1, 7);
+        System.out.println(list);
+        System.out.println(list.get(0));
+        System.out.println(list.contains(3));
+        System.out.println(list.lastIndexOf(6));
     }
 }
 
