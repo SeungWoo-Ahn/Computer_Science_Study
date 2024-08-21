@@ -86,7 +86,7 @@ public class MArrayList<E> implements MList<E> {
         * 들어있는 데이터가 하나도 없을 경우
         * 1. 현재 빈 배열일 경우, 다시 기본 용량으로 초기화 후 반환
         * */
-        if (element_capacity == 0) {
+        if (Arrays.equals(elementData, EMPTY_ELEMENT_DATA)) {
             elementData = new Object[DEFAULT_CAPACITY];
         }
     }
