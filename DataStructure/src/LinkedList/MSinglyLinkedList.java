@@ -100,14 +100,14 @@ public class MSinglyLinkedList<E> {
     * 8. 이전 노드와 새 노드를 연결
     * */
     public void add(int index, E e) {
-        if (index < 0 || index >= size) {
+        if (index < 0 || index > size) {
             throw new IndexOutOfBoundsException();
         }
         if (index == 0) {
             addFirst(e);
             return;
         }
-        if (index == size - 1) {
+        if (index == size) {
             addLast(e);
             return;
         }
