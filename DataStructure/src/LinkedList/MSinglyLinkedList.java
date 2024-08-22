@@ -1,6 +1,7 @@
 package LinkedList;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 public class MSinglyLinkedList<E> {
     private Node<E> head;
@@ -13,6 +14,9 @@ public class MSinglyLinkedList<E> {
     * 모든 값 초기화
     * */
     public MSinglyLinkedList() {
+        head = null;
+        tail = null;
+        size = 0;
     }
 
     private static class Node<E> {
@@ -29,7 +33,11 @@ public class MSinglyLinkedList<E> {
     * LinkedList 의 index 번째 있는 요소를 반환
     * */
     private Node<E> search(int index) {
-        return null;
+        Node<E> n = head;
+        for (int i = 0; i < index; i++) {
+            n = n.next;
+        }
+        return n;
     }
 
     /*
@@ -41,7 +49,13 @@ public class MSinglyLinkedList<E> {
     * 만일 최초로 요소가 add 된 것이면 head 와 tail 이 같게 됨
     * */
     public void addFirst(E e) {
-
+        Node<E> originFirst = head;
+        Node<E> first = new Node<>(e, originFirst);
+        size++;
+        head = first;
+        if (originFirst == null) {
+            tail = first;
+        }
     }
 
     /*
@@ -54,7 +68,15 @@ public class MSinglyLinkedList<E> {
     * 6. 아니라면 기존 마지막 변수가 새 노드를 가리키게 함
     * */
     public void addLast(E e) {
-
+        Node<E> originLast = tail;
+        Node<E> last = new Node<>(e, null);
+        size++;
+        tail = last;
+        if (originLast == null) {
+            head = last;
+        } else {
+            originLast.next = last;
+        }
     }
 
     /*
@@ -62,6 +84,7 @@ public class MSinglyLinkedList<E> {
     * 1. addLast() 와 같음
     * */
     public boolean add(E e) {
+        addLast(e);
         return true;
     }
 
@@ -77,7 +100,22 @@ public class MSinglyLinkedList<E> {
     * 8. 이전 노드와 새 노드를 연결
     * */
     public void add(int index, E e) {
-
+        if (index < 0 || index >= size) {
+            throw new IndexOutOfBoundsException();
+        }
+        if (index == 0) {
+            addFirst(e);
+            return;
+        }
+        if (index == size - 1) {
+            addLast(e);
+            return;
+        }
+        Node<E> prevNode = search(index - 1);
+        Node<E> nxtNode = prevNode.next;
+        Node<E> newNode = new Node<>(e, nxtNode);
+        size++;
+        prevNode.next = newNode;
     }
 
     /*
@@ -92,14 +130,26 @@ public class MSinglyLinkedList<E> {
     * 8. 삭제된 데이터를 반환함
     * */
     public E removeFirst() {
-        return null;
+        if (head == null) {
+            throw new IndexOutOfBoundsException();
+        }
+        E data = head.item;
+        Node<E> second = head.next;
+        head.item = null;
+        head.next = null;
+        head = second;
+        size--;
+        if (head == null) {
+            tail = null;
+        }
+        return data;
     }
 
     /*
     * 맨 앞 요소를 제거함
     * */
     public E remove() {
-        return null;
+        return removeFirst();
     }
 
     /*
@@ -116,7 +166,21 @@ public class MSinglyLinkedList<E> {
     * 10. 삭제된 데이터를 반환
     * */
     public E remove(int index) {
-        return null;
+        if (index < 0 || index >= size) {
+            throw new IndexOutOfBoundsException();
+        }
+        if (index == 0) {
+            return removeFirst();
+        }
+        Node<E> prevNode = search(index - 1);
+        Node<E> delNode = prevNode.next;
+        Node<E> nxtNode = delNode.next;
+        E data = delNode.item;
+        delNode.item = null;
+        delNode.next = null;
+        size--;
+        prevNode.next = nxtNode;
+        return data;
     }
 
     /*
@@ -133,6 +197,33 @@ public class MSinglyLinkedList<E> {
     * 19. 이전 노드가 다음 노드를 참조하도록 업데이트
     * */
     public boolean remove(Object o) {
+        if (head == null) {
+            throw new RuntimeException();
+        }
+        Node<E> prevNode = null;
+        Node<E> delNode = null;
+        Node<E> nxtNode = null;
+        Node<E> i = head;
+        while (i != null) {
+            if (Objects.equals(o, i.item)) {
+                delNode = i;
+                break;
+            }
+            prevNode = i;
+            i = i.next;
+        }
+        if (delNode == null) {
+            return false;
+        }
+        if (delNode.equals(head)) {
+            removeFirst();
+            return true;
+        }
+        nxtNode = delNode.next;
+        delNode.item = null;
+        delNode.next = null;
+        size--;
+        prevNode.next = nxtNode;
         return true;
     }
 
@@ -142,7 +233,7 @@ public class MSinglyLinkedList<E> {
     * tail 이 있지만, 그 이전 노드를 참조할 prev 가 없기 때문에 처음부터 순회해야함
     * */
     public E removeLast() {
-        return null;
+        return remove(size - 1);
     }
 
     /*
@@ -151,7 +242,10 @@ public class MSinglyLinkedList<E> {
     * 2. search() 로 검색해 데이터를 반환
     * */
     public E get(int index) {
-        return null;
+        if (index < 0 || index >= size) {
+            throw new IndexOutOfBoundsException();
+        }
+        return search(index).item;
     }
 
     /*
@@ -161,7 +255,11 @@ public class MSinglyLinkedList<E> {
     * 3. 교체할 노드의 요소를 변경함
     * */
     public void set(int index, E e) {
-
+        if (index < 0 || index >= size) {
+            throw new IndexOutOfBoundsException();
+        }
+        Node<E> node = search(index);
+        node.item = e;
     }
 
     @Override
