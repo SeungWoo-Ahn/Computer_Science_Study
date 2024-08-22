@@ -1,5 +1,8 @@
 package LinkedList;
 
+import java.util.NoSuchElementException;
+import java.util.Objects;
+
 public class MDoublyLinkedList<E> {
     private Node<E> head;
     private Node<E> tail;
@@ -10,7 +13,9 @@ public class MDoublyLinkedList<E> {
     * 생성자
     * */
     public MDoublyLinkedList() {
-
+        head = null;
+        tail = null;
+        size = 0;
     }
 
     private static class Node<E> {
@@ -31,7 +36,19 @@ public class MDoublyLinkedList<E> {
     * 2. index 가 끝에 가까우면 역순 탐색
     * */
     private Node<E> search(int index) {
-        return null;
+        Node<E> n;
+        if (index < size / 2) {
+            n = head;
+            for (int i = 0; i < index; i++) {
+                n = n.next;
+            }
+        } else {
+            n = tail;
+            for (int i = size - 1; i > index; i--) {
+                n = n.prev;
+            }
+        }
+        return n;
     }
 
     /*
@@ -43,7 +60,15 @@ public class MDoublyLinkedList<E> {
     * 6. 아니라면, 기존 첫 노드가 새 노드를 참조하도록 업데이트
     * */
     public void addFirst(E e) {
-
+        Node<E> originFirst = head;
+        Node<E> first = new Node<>(e, null, originFirst);
+        size++;
+        head = first;
+        if (originFirst == null) {
+            tail = first;
+        } else {
+            originFirst.prev = first;
+        }
     }
 
     /*
@@ -55,13 +80,22 @@ public class MDoublyLinkedList<E> {
     * 6. 아니라면, 기존 마지막 노드가 새 노드를 참조하도록 업데이트
     * */
     public void addLast(E e) {
-
+        Node<E> originLast = tail;
+        Node<E> last = new Node<>(e, originLast, null);
+        size++;
+        tail = last;
+        if (originLast == null) {
+            head = last;
+        } else {
+            originLast.next = last;
+        }
     }
 
     /*
     * 마지막에 요소를 추가함
     * */
     public boolean add(E e) {
+        addLast(e);
         return true;
     }
 
@@ -77,7 +111,23 @@ public class MDoublyLinkedList<E> {
     * 9. 다음 노드의 prev 를 새 노드에 연결
     * */
     public void add(int index, E e) {
-
+        if (index < 0 || index > size) {
+            throw new IndexOutOfBoundsException();
+        }
+        if (index == 0) {
+            addFirst(e);
+            return;
+        }
+        if (index == size) {
+            addLast(e);
+            return;
+        }
+        Node<E> nxtNode = search(index);
+        Node<E> prevNode = nxtNode.prev;
+        Node<E> newNode = new Node<>(e, prevNode, nxtNode);
+        size++;
+        prevNode.next = newNode;
+        nxtNode.prev = newNode;
     }
 
     /*
@@ -92,14 +142,28 @@ public class MDoublyLinkedList<E> {
     * 9. 삭제된 노드의 데이터를 반환
     * */
     public E removeFirst() {
-        return null;
+        if (head == null) {
+            throw new NoSuchElementException();
+        }
+        E data = head.item;
+        Node<E> first = head.next;
+        head.item = null;
+        head.next = null;
+        size--;
+        head = first;
+        if (first == null) {
+            tail = null;
+        } else {
+            first.prev = null;
+        }
+        return data;
     }
 
     /*
     * 첫 번째 노드를 제거하며 해당 데이터를 반환
     * */
     public E remove() {
-        return null;
+        return removeFirst();
     }
 
     /*
@@ -114,7 +178,21 @@ public class MDoublyLinkedList<E> {
     * 9. 삭제된 노드의 데이터를 반환
     * */
     public E removeLast() {
-        return null;
+        if (tail == null) {
+            throw new NoSuchElementException();
+        }
+        E data = tail.item;
+        Node<E> last = tail.prev;
+        tail.item = null;
+        tail.prev = null;
+        size--;
+        tail = last;
+        if (last == null) {
+            head = null;
+        } else {
+            last.next = null;
+        }
+        return data;
     }
 
     /*
@@ -130,7 +208,26 @@ public class MDoublyLinkedList<E> {
     * 10. 삭제한 노드의 데이터를 반환
     * */
     public E remove(int index) {
-        return null;
+        if (index < 0 || index >= size) {
+            throw new IndexOutOfBoundsException();
+        }
+        if (index == 0) {
+            return removeFirst();
+        }
+        if (index == size - 1) {
+            return removeLast();
+        }
+        Node<E> delNode = search(index);
+        Node<E> prevNode = delNode.prev;
+        Node<E> nxtNode = delNode.next;
+        E data = delNode.item;
+        delNode.item = null;
+        delNode.prev = null;
+        delNode.next = null;
+        size--;
+        prevNode.next = nxtNode;
+        nxtNode.prev = prevNode;
+        return data;
     }
 
     /*
@@ -146,6 +243,34 @@ public class MDoublyLinkedList<E> {
     * 10. 이전 노드와 다음 노드끼리 연결
     * */
     public boolean remove(Object o) {
+        Node<E> n = null;
+        Node<E> i = head;
+        while (i != null) {
+            if (Objects.equals(o, i.item)) {
+                n = i;
+                break;
+            }
+            i = i.next;
+        }
+        if (n == null) {
+            return false;
+        }
+        if (n == head) {
+            removeFirst();
+            return true;
+        }
+        if (n == tail) {
+            removeLast();
+            return true;
+        }
+        Node<E> prevNode = n.prev;
+        Node<E> nxtNode = n.next;
+        n.item = null;
+        n.prev = null;
+        n.next = null;
+        size--;
+        prevNode.next = nxtNode;
+        nxtNode.prev = prevNode;
         return true;
     }
 
@@ -154,7 +279,10 @@ public class MDoublyLinkedList<E> {
     * 2. search() 로 검색 후 해당 데이터를 반환
     * */
     public E get(int index) {
-        return null;
+        if (index < 0 || index >= size) {
+            throw new IndexOutOfBoundsException();
+        }
+        return search(index).item;
     }
 
     /*
@@ -163,13 +291,26 @@ public class MDoublyLinkedList<E> {
     * 3. 데이터 교체
     * */
     public void set(int index, E e) {
-
+        if (index < 0 || index >= size) {
+            throw new IndexOutOfBoundsException();
+        }
+        Node<E> n = search(index);
+        n.item = e;
     }
 
     /*
     * 순서대로 검색해서 일치하는 첫 요소의 위치를 반환
     * */
     public int indexOf(Object o) {
+        Node<E> n = head;
+        int i = 0;
+        while (n != null) {
+            if (Objects.equals(o, n.item)) {
+                return i;
+            }
+            n = n.next;
+            i++;
+        }
         return -1;
     }
 
@@ -177,6 +318,15 @@ public class MDoublyLinkedList<E> {
     * 거꾸로 검색해서 일치하는 첫 요소의 위치를 반환
     * */
     public int lastIndexOf(Object o) {
+        Node<E> n = tail;
+        int i = size - 1;
+        while (n != null) {
+            if (Objects.equals(o, n.item)) {
+                return i;
+            }
+            n = n.prev;
+            i--;
+        }
         return -1;
     }
 }
