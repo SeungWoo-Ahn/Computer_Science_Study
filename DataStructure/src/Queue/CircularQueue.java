@@ -1,5 +1,9 @@
 package Queue;
 
+import java.util.Arrays;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+
 /**
  * CircularQueue 즉 원형 큐는 Array 와 front, rear 변수를 활용해서 만듦
  * front 의 다음 인덱스부터 값이 들어가있는데, 왜 front 부터 값을 넣지 않을까?
@@ -16,11 +20,17 @@ public class CircularQueue<E> implements Queue<E> {
     private int rear; // 마지막 요소의 인덱스를 가리키는 변수
 
     public CircularQueue() {
-
+        this.array = new Object[DEFAULT_CAPACITY];
+        this.size = 0;
+        this.front = 0;
+        this.rear = 0;
     }
 
     public CircularQueue(int capacity) {
-
+        this.array = new Object[DEFAULT_CAPACITY];
+        this.size = 0;
+        this.front = 0;
+        this.rear = 0;
     }
 
     /**
@@ -30,7 +40,15 @@ public class CircularQueue<E> implements Queue<E> {
      * 4. front, rear 다시 설정
      */
     private void resize(int newCapacity) {
-
+        int originCapacity = array.length;
+        Object[] new_array = new Object[newCapacity];
+        for (int i = 1, j = front + 1; i <= size; i++, j++) {
+            new_array[i] = array[j % originCapacity];
+        }
+        this.array = null;
+        this.array = new_array;
+        front = 0;
+        rear = size;
     }
 
     /**
@@ -40,6 +58,12 @@ public class CircularQueue<E> implements Queue<E> {
      */
     @Override
     public boolean offer(E e) {
+        if ((rear + 1) % array.length == front) {
+            resize(array.length * 2);
+        }
+        rear = (rear + 1) % array.length;
+        array[rear] = e;
+        size++;
         return false;
     }
 
@@ -54,8 +78,19 @@ public class CircularQueue<E> implements Queue<E> {
      * 7. 삭제된 데이터 반환
      */
     @Override
+    @SuppressWarnings("unchecked")
     public E poll() {
-        return null;
+        if (size == 0) {
+            return null;
+        }
+        front = (front + 1) % array.length;
+        E data = (E) array[front];
+        array[front] = null;
+        size--;
+        if (array.length > DEFAULT_CAPACITY && size < array.length / 4) {
+            resize(Math.max(DEFAULT_CAPACITY, array.length / 2));
+        }
+        return data;
     }
 
     /**
@@ -64,7 +99,11 @@ public class CircularQueue<E> implements Queue<E> {
      * 3. 데이터 반환
      */
     public E remove() {
-        return null;
+        E data = poll();
+        if (data == null) {
+            throw new NoSuchElementException();
+        }
+        return data;
     }
 
     /**
@@ -72,16 +111,20 @@ public class CircularQueue<E> implements Queue<E> {
      * 2. 맨 앞 요소를 반환
      */
     @Override
+    @SuppressWarnings("unchecked")
     public E peek() {
-        return null;
+        if (size == 0) {
+            return null;
+        }
+        return (E) array[(front + 1) % array.length];
     }
 
     public int size() {
-        return 0;
+        return size;
     }
 
     public boolean isEmpty() {
-        return false;
+        return size == 0;
     }
 
     /**
@@ -89,6 +132,12 @@ public class CircularQueue<E> implements Queue<E> {
      * 2. i: 요소 개수만큼 반복, idx: 원소의 위치로, 매 회 (idx + 1) % array.length 의 위치로 갱신
      */
     public boolean contains(Object o) {
+        int start = (front + 1) % array.length;
+        for (int i = 0, idx = start; i < size; i++, idx = (idx + 1) % array.length) {
+            if (Objects.equals(array[idx], o)) {
+                return true;
+            }
+        }
         return false;
     }
 
@@ -97,6 +146,9 @@ public class CircularQueue<E> implements Queue<E> {
      * 2. front, rear, size 초기화
      */
     public void clear() {
-
+        Arrays.fill(array, null);
+        front = 0;
+        rear = 0;
+        size = 0;
     }
 }
