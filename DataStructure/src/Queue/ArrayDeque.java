@@ -66,7 +66,7 @@ public class ArrayDeque<E> implements Queue<E> {
         rear = (rear + 1) % array.length;
         array[rear] = e;
         size++;
-        return false;
+        return true;
     }
 
     /**
@@ -82,7 +82,7 @@ public class ArrayDeque<E> implements Queue<E> {
         array[front] = e;
         front = (front - 1 + array.length) % array.length;
         size++;
-        return false;
+        return true;
     }
 
     /**
