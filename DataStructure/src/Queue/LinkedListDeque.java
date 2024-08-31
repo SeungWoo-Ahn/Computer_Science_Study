@@ -1,5 +1,8 @@
 package Queue;
 
+import java.util.NoSuchElementException;
+import java.util.Objects;
+
 public class LinkedListDeque<E> implements Queue<E> {
 
     private Node<E> head;
@@ -7,7 +10,9 @@ public class LinkedListDeque<E> implements Queue<E> {
     private int size;
 
     public LinkedListDeque() {
-
+        this.head = null;
+        this.tail = null;
+        this.size = 0;
     }
 
     private static class Node<E> {
@@ -22,68 +27,148 @@ public class LinkedListDeque<E> implements Queue<E> {
 
     @Override
     public boolean offer(E e) {
-        return false;
+        return offerLast(e);
     }
 
     public boolean offerFirst(E e) {
-        return false;
+        Node<E> newNode = new Node<>(e);
+        if (head != null) {
+            head.prev = newNode;
+        }
+        newNode.next = head;
+        head = newNode;
+        size++;
+        if (head.next == null) {
+            tail = head;
+        }
+        return true;
     }
 
     public boolean offerLast(E e) {
-        return false;
+        if (size == 0) {
+            return offerFirst(e);
+        }
+        Node<E> newNode = new Node<>(e);
+        tail.next = newNode;
+        newNode.prev = tail;
+        tail = newNode;
+        size++;
+        return true;
     }
 
     @Override
     public E poll() {
-        return null;
+        return pollFirst();
     }
 
     public E pollFirst() {
-        return null;
+        if (size == 0) {
+            return null;
+        }
+        E data = head.data;
+        Node<E> second = head.next;
+        head.data = null;
+        head.next = null;
+        if (second != null) {
+            second.prev = null;
+        }
+        head = null;
+        head = second;
+        size--;
+        if (size == 0) {
+            tail = null;
+        }
+        return data;
     }
 
     public E pollLast() {
-        return null;
+        if (size == 0) {
+            return null;
+        }
+        E data = tail.data;
+        Node<E> beforeLast = tail.prev;
+        tail.data = null;
+        tail.prev = null;
+        if (beforeLast != null) {
+            beforeLast.next = null;
+        }
+        tail = null;
+        tail = beforeLast;
+        size--;
+        if (size == 0) {
+            head = null;
+        }
+        return data;
     }
 
     public E remove() {
-        return null;
+        return removeFirst();
     }
 
     public E removeFirst() {
-        return null;
+        E data = pollFirst();
+        if (data == null) {
+            throw new NoSuchElementException();
+        }
+        return data;
     }
 
     public E removeLast() {
-        return null;
+        E data = pollLast();
+        if (data == null) {
+            throw new NoSuchElementException();
+        }
+        return data;
     }
 
     @Override
     public E peek() {
-        return null;
+        return peekFirst();
     }
 
     public E peekFirst() {
-        return null;
+        if (size == 0) {
+            return null;
+        }
+        return head.data;
     }
 
     public E peekLast() {
-        return null;
+        if (size == 0) {
+            return null;
+        }
+        return tail.data;
     }
 
     public int size() {
-        return 0;
+        return size;
     }
 
     public boolean isEmpty() {
-        return false;
+        return size == 0;
     }
 
     public boolean contains(Object o) {
+        Node<E> node = head;
+        while (node != null) {
+            if (Objects.equals(node.data, o)) {
+                return true;
+            }
+            node = node.next;
+        }
         return false;
     }
 
     public void clear() {
-
+        Node<E> node = head;
+        while (node != null) {
+            Node<E> nextNode = node.next;
+            node.data = null;
+            node.prev = null;
+            node.next = null;
+            node = nextNode;
+        }
+        head = tail = null;
+        size = 0;
     }
 }
