@@ -1,5 +1,9 @@
 package Queue;
 
+import java.util.Arrays;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+
 public class ArrayDeque<E> implements Queue<E> {
 
     private static final int DEFAULT_CAPACITY = 64;
@@ -11,11 +15,17 @@ public class ArrayDeque<E> implements Queue<E> {
     private int rear;
 
     public ArrayDeque() {
-
+        this.array = new Object[DEFAULT_CAPACITY];
+        this.size = 0;
+        this.front = 0;
+        this.rear = 0;
     }
 
     public ArrayDeque(int capacity) {
-
+        this.array = new Object[capacity];
+        this.size = 0;
+        this.front = 0;
+        this.rear = 0;
     }
 
     /**
@@ -26,7 +36,14 @@ public class ArrayDeque<E> implements Queue<E> {
      * 5. front, rear 변경
      */
     private void resize(int newCapacity) {
-
+        Object[] newArray = new Object[newCapacity];
+        for (int i = 1, j = front + 1; i <= size; i++, j++) {
+            newArray[i] = array[j % array.length];
+        }
+        this.array = null;
+        this.array = newArray;
+        front = 0;
+        rear = size;
     }
 
     /**
@@ -34,7 +51,7 @@ public class ArrayDeque<E> implements Queue<E> {
      */
     @Override
     public boolean offer(E e) {
-        return false;
+        return offerLast(e);
     }
 
     /**
@@ -43,6 +60,12 @@ public class ArrayDeque<E> implements Queue<E> {
      * 3. 데이터 삽입 및 사이즈 증가
      */
     public boolean offerLast(E e) {
+        if ((rear + 1) % array.length == front) {
+            resize(array.length * 2);
+        }
+        rear = (rear + 1) % array.length;
+        array[rear] = e;
+        size++;
         return false;
     }
 
@@ -53,6 +76,12 @@ public class ArrayDeque<E> implements Queue<E> {
      * 4. 사이즈 증가
      */
     public boolean offerFirst(E e) {
+        if ((front - 1 + array.length) % array.length == rear) {
+            resize(array.length * 2);
+        }
+        array[front] = e;
+        front = (front - 1 + array.length) % array.length;
+        size++;
         return false;
     }
 
@@ -61,7 +90,7 @@ public class ArrayDeque<E> implements Queue<E> {
      */
     @Override
     public E poll() {
-        return null;
+        return pollFirst();
     }
 
     /**
@@ -73,15 +102,26 @@ public class ArrayDeque<E> implements Queue<E> {
      * 6. 용적이 최소 크기보다 크고 요소 개수가 1/4 미만일 경우
      * 7. 최소 크기와 현재 크기 절반 중 큰 것으로 resize
      */
+    @SuppressWarnings("unchecked")
     public E pollFirst() {
-        return null;
+        if (size == 0) {
+            return null;
+        }
+        front = (front + 1) % array.length;
+        E data = (E) array[front];
+        array[front] = null;
+        size--;
+        if (array.length > DEFAULT_CAPACITY && size < array.length / 4) {
+            resize(Math.max(DEFAULT_CAPACITY, array.length / 2));
+        }
+        return data;
     }
 
     /**
      * removeFirst 호출
      */
     public E remove() {
-        return null;
+        return removeFirst();
     }
 
     /**
@@ -89,7 +129,11 @@ public class ArrayDeque<E> implements Queue<E> {
      * 2. 없으면 예외 던지기
      */
     public E removeFirst() {
-        return null;
+        E data = pollFirst();
+        if (data == null) {
+            throw new NoSuchElementException();
+        }
+        return data;
     }
 
     /**
@@ -101,8 +145,19 @@ public class ArrayDeque<E> implements Queue<E> {
      * 6. 용적이 최소 크기보다 크고 요소 개수가 1/4 미만일 경우
      * 7. 최소 크기와 현재 크기 절반 중 큰 것으로 resize
      */
+    @SuppressWarnings("unchecked")
     public E pollLast() {
-        return null;
+        if (size == 0) {
+            return null;
+        }
+        E data = (E) array[rear];
+        array[rear] = null;
+        rear = (rear - 1 + array.length) % array.length;
+        size--;
+        if (array.length > DEFAULT_CAPACITY && size < array.length / 4) {
+            resize(Math.max(DEFAULT_CAPACITY, array.length / 2));
+        }
+        return data;
     }
 
     /**
@@ -110,7 +165,7 @@ public class ArrayDeque<E> implements Queue<E> {
      * 2. 없으면 예외 던지기
      */
     public E removeLast() {
-        return null;
+        return pollLast();
     }
 
     /**
@@ -118,35 +173,49 @@ public class ArrayDeque<E> implements Queue<E> {
      */
     @Override
     public E peek() {
-        return null;
+        return peekFirst();
     }
 
     /**
      * 1. 요소가 없으면 null 반환
      */
+    @SuppressWarnings("unchecked")
     public E peekFirst() {
-        return null;
+        if (size == 0) {
+            return null;
+        }
+        return (E) array[(front + 1) % array.length];
     }
 
     /**
      * 1. 요소가 없으면 null 반환
      */
+    @SuppressWarnings("unchecked")
     public E peekLast() {
-        return null;
+        if (size == 0) {
+            return null;
+        }
+        return (E) array[rear];
     }
 
     public int size() {
-        return 0;
+        return size;
     }
 
     public boolean isEmpty() {
-        return false;
+        return size == 0;
     }
 
     /**
      * 1. i: 요소 개수만큼, idx: 원소 위치로 순회하며 찾음
      */
     public boolean contains(Object o) {
+        int start = (front + 1) % array.length;
+        for (int i = 0, idx = start; i < size; i++, idx = (idx + 1) % array.length) {
+            if (Objects.equals(array[idx], o)) {
+                return true;
+            }
+        }
         return false;
     }
 
@@ -155,6 +224,7 @@ public class ArrayDeque<E> implements Queue<E> {
      * 2. front, rear, size 초기화
      */
     public void clear() {
-
+        Arrays.fill(array, null);
+        front = rear = size = 0;
     }
 }
