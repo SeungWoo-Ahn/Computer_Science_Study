@@ -1,4 +1,6 @@
-// ReportGenerator 클래스는 한 클래스가 여러 책임을 담당함
+package SOLID;
+
+// SOLID.ReportGenerator 클래스는 한 클래스가 여러 책임을 담당함
 // SRP 위반
 class ReportGenerator {
     public void generatePDFReport() {

@@ -1,3 +1,5 @@
+package SOLID;
+
 interface Document {
     void create();
     void edit();
@@ -27,7 +29,7 @@ class TextDocument implements Document {
     }
 }
 
-// PDFDocument 클래스는 edit() 메서드가 필요가 없음
+// SOLID.PDFDocument 클래스는 edit() 메서드가 필요가 없음
 // 하지만 필요하지 않은 메서드를 강제로 구현해야 함
 class PDFDocument implements Document {
     @Override
