@@ -1,3 +1,5 @@
+package Equals;
+
 import java.util.Objects;
 
 class User {
