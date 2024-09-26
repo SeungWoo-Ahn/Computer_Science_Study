@@ -1,5 +1,7 @@
 package Set;
 
+import java.util.Objects;
+
 public class HashSet<E> implements Set<E> {
     private final static int DEFAULT_CAPACITY = 1 << 4;
     private final static float LOAD_FACTOR = 0.75f;
@@ -7,8 +9,10 @@ public class HashSet<E> implements Set<E> {
     Node<E>[] table;
     private int size;
 
+    @SuppressWarnings("unchecked")
     public HashSet() {
-
+        this.table = (Node<E>[]) new Node[DEFAULT_CAPACITY];
+        this.size = 0;
     }
 
     /**
@@ -17,7 +21,8 @@ public class HashSet<E> implements Set<E> {
      * 2. 아닐 경우, key 의 hashCode ^ (해시값 >>> 16)
      */
     private static final int hash(Object key) {
-        return 0;
+        int hash;
+        return key == null ? 0 : (hash = key.hashCode()) ^ (hash >>> 16);
     }
 
     /**
@@ -32,8 +37,38 @@ public class HashSet<E> implements Set<E> {
      * 9. 비었다면, 해당 노드 추가
      * 10. 기존 테이블 null 처리, 새 테이블로 교체
      */
+    @SuppressWarnings("unchecked")
     private void resize() {
+        int newCapacity = table.length << 1;
+        Node<E>[] newTable = (Node<E>[]) new Node[newCapacity];
+        for (int i = 0; i < table.length; i++) {
+            Node<E> data = table[i];
+            if (data == null) {
+                continue;
+            }
+            table[i] = null;
 
+            Node<E> nextNode;
+            while (data != null) {
+                int index = data.hash & (newCapacity - 1);
+                if (newTable[index] != null) {
+                    Node<E> tail = newTable[index];
+                    while (tail.next != null) {
+                        tail = tail.next;
+                    }
+                    nextNode = data.next;
+                    data.next = null;
+                    tail.next = data;
+                } else {
+                    nextNode = data.next;
+                    data.next = null;
+                    newTable[index] = data;
+                }
+                data = nextNode;
+            }
+        }
+        table = null;
+        table = newTable;
     }
 
     /**
@@ -44,7 +79,7 @@ public class HashSet<E> implements Set<E> {
      * 5. 만약 다음 노드가 없다면 (유일한 노드라면), 새 index 는 해시 & (새 용적 - 1)
      * 6. 만약 두 개 이상의 노드가 연결된다면, 제자리 배치에 사용되는 lowHead, lowTail 및 새롭게 배치하는 highHead, highTail 노드 모두 null 로 선언
      * 7. 다음 노드 next 선언
-     * 8. do while 문으로 현재 노드가 null 일때까지 반복
+     * 8. do while 문으로 현재 노드가 null 이 아닐때까지 반복
      * 9. next 에 현재 노드의 다음을 할당
      * 10. 현재 노드 해시 & 기존 용적 == 0 경우(몫이 짝수일 경우), low 에 배치됨
      * 11. 처음 배치되면 lowHead 에, 아니면 lowTail 의 next 에 현재 노드 할당, lowTail 에 현재 노드 할당
@@ -53,13 +88,66 @@ public class HashSet<E> implements Set<E> {
      * 15. highTail 이 존재할 경우, highTail 의 next 를 끊어주고 새 테이블의 (해당 인덱스 + 기존 용적)에 highHead 배치
      * 16. 새 테이블로 교체
      */
+    @SuppressWarnings("unchecked")
     private void betterResize() {
+        int oldCapacity = table.length;
+        int newCapacity = oldCapacity << 1;
+        Node<E>[] newTable = (Node<E>[]) new Node[newCapacity];
 
+        for (int i = 0; i < oldCapacity; i++) {
+            Node<E> data = table[i];
+            if (data == null) {
+                continue;
+            }
+            table[i] = null;
+
+            if (data.next == null) {
+                newTable[data.hash & (newCapacity - 1)] = data;
+                continue;
+            }
+
+            Node<E> lowHead = null;
+            Node<E> lowTail = null;
+            Node<E> highHead = null;
+            Node<E> highTail = null;
+            Node<E> nextNode;
+
+            do {
+                nextNode = data.next;
+                if ((data.hash & oldCapacity) == 0) {
+                    if (lowHead == null) {
+                        lowHead = data;
+                    } else {
+                        lowTail.next = data;
+                    }
+                    lowTail = data;
+                } else {
+                    if (highHead == null) {
+                        highHead = data;
+                    } else {
+                        highTail.next = data;
+                    }
+                    highTail = data;
+                }
+                data = nextNode;
+            } while (data != null);
+
+            if (lowTail != null) {
+                lowTail.next = null;
+                newTable[i] = lowHead;
+            }
+            if (highTail != null) {
+                highTail.next = null;
+                newTable[i + oldCapacity] = highHead;
+            }
+        }
+
+        table = newTable;
     }
 
     @Override
     public boolean add(E e) {
-        return false;
+        return add(hash(e), e) == null;
     }
 
     /**
@@ -72,12 +160,31 @@ public class HashSet<E> implements Set<E> {
      * 7. 정상적으로 추가되면 null 반환
      */
     private E add(int hash, E key) {
+        int index = hash & (table.length - 1);
+        if (table[index] == null) {
+            table[index] = new Node<>(hash, key, null);
+        } else {
+            Node<E> node = table[index];
+            Node<E> prev = null;
+            while (node != null) {
+                if (node.hash == hash && (node.key == key || node.key.equals(key))) {
+                    return key;
+                }
+                prev = node;
+                node = node.next;
+            }
+            prev.next = new Node<>(hash, key, null);
+        }
+        size++;
+        if (size >= table.length * LOAD_FACTOR) {
+            betterResize();
+        }
         return null;
     }
 
     @Override
     public boolean remove(Object o) {
-        return false;
+        return remove(hash(o), o) != null;
     }
 
     /**
@@ -92,7 +199,29 @@ public class HashSet<E> implements Set<E> {
      * 9. removedNode 반환
      */
     private Object remove(int hash, Object key) {
-        return null;
+        int index = hash & (table.length - 1);
+        Node<E> node = table[index];
+        Node<E> removedNode = null;
+        Node<E> prev = null;
+        if (node == null) {
+            return null;
+        }
+        while (node != null) {
+            if (node.hash == hash && (node.key == key || node.key.equals(key))) {
+                removedNode = node;
+                if (prev == null) {
+                    table[index] = node.next;
+                } else {
+                    prev.next = node.next;
+                }
+                node = null;
+                size--;
+                break;
+            }
+            prev = node;
+            node = node.next;
+        }
+        return removedNode;
     }
 
     /**
@@ -103,6 +232,14 @@ public class HashSet<E> implements Set<E> {
      */
     @Override
     public boolean contains(Object o) {
+        int index = hash(o) & (table.length - 1);
+        Node<E> node = table[index];
+        while (node != null) {
+            if (Objects.equals(o, node.key)) {
+                return true;
+            }
+            node = node.next;
+        }
         return false;
     }
 
@@ -115,19 +252,46 @@ public class HashSet<E> implements Set<E> {
      * 6. 각 노드 끝까지 탐색하며 contains 로 존재 여부 확인, 아니라면 false 반환
      * 7. 위 과정 모두 통과되면 true 반환
      */
+    @SuppressWarnings("unchecked")
     @Override
     public boolean equals(Object obj) {
-        return super.equals(obj);
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof HashSet)) {
+            return false;
+        }
+        HashSet<E> oSet;
+        try {
+            oSet = (HashSet<E>) obj;
+            if (this.size != oSet.size()) {
+                return false;
+            }
+            for (int i = 0; i < oSet.table.length; i++) {
+                Node<E> thisTable = table[i];
+                Node<E> oTable = oSet.table[i];
+                while (thisTable != null && oTable != null) {
+                    if (thisTable.key != oTable.key || !thisTable.key.equals(oTable.key)) {
+                        return false;
+                    }
+                    thisTable = thisTable.next;
+                    oTable = oTable.next;
+                }
+            }
+        } catch (ClassCastException e) {
+            return false;
+        }
+        return true;
     }
 
     @Override
     public boolean isEmpty() {
-        return false;
+        return size == 0;
     }
 
     @Override
     public int size() {
-        return 0;
+        return size;
     }
 
     /**
@@ -135,6 +299,11 @@ public class HashSet<E> implements Set<E> {
      */
     @Override
     public void clear() {
-
+        if (table != null && size > 0) {
+            for (int i = 0; i < table.length; i++) {
+                table[i] = null;
+            }
+            size = 0;
+        }
     }
 }
