@@ -1,5 +1,8 @@
 package Set;
 
+import java.util.Arrays;
+import java.util.Objects;
+
 public class LinkedHashSet<E> implements Set<E> {
     private static class Node<E> {
         final int hash;
@@ -27,12 +30,17 @@ public class LinkedHashSet<E> implements Set<E> {
     private Node<E> head;
     private Node<E> tail;
 
+    @SuppressWarnings("unchecked")
     public LinkedHashSet() {
-
+        this.table = (Node<E>[]) new Node[DEFAULT_CAPACITY];
+        this.size = 0;
+        this.head = null;
+        this.tail = null;
     }
 
     private static final int hash(Object key) {
-        return 0;
+        int hash;
+        return key == null ? 0 : (hash = key.hashCode()) ^ (hash >>> 16);
     }
 
     /**
@@ -46,8 +54,37 @@ public class LinkedHashSet<E> implements Set<E> {
      * 8. 아니라면 해당 value의 next를 끊어주고 테이블에 삽입
      * 9. 기존 테이블은 새 테이블로 교체
      */
+    @SuppressWarnings("unchecked")
     private void resize() {
-
+        int newCapacity = table.length << 1;
+        Node<E>[] newTable = (Node<E>[]) new Node[newCapacity];
+        for (int i = 0; i < table.length; i++) {
+            Node<E> value = table[i];
+            if (value == null) {
+                continue;
+            }
+            table[i] = null;
+            Node<E> nextNode;
+            while (value != null) {
+                int index = value.hash % newCapacity;
+                if (newTable[index] != null) {
+                    Node<E> tail = newTable[index];
+                    while (tail.next != null) {
+                        tail = tail.next;
+                    }
+                    nextNode = value.next;
+                    value.next = null;
+                    tail.next = value;
+                } else {
+                    nextNode = value.next;
+                    value.next = null;
+                    newTable[index] = value;
+                }
+                value = nextNode;
+            }
+        }
+        table = null;
+        table = newTable;
     }
 
     /**
@@ -57,12 +94,19 @@ public class LinkedHashSet<E> implements Set<E> {
      * 4. 아니라면 기존 tail과 새 노드를 연결
      */
     private void linkLastNode(Node<E> node) {
-
+        Node<E> last = tail;
+        tail = node;
+        if (last == null) {
+            head = node;
+        } else {
+            last.nextLink = node;
+            node.prevLink = last;
+        }
     }
 
     @Override
     public boolean add(E e) {
-        return false;
+        return add(hash(e), e) == null;
     }
 
     /**
@@ -77,6 +121,27 @@ public class LinkedHashSet<E> implements Set<E> {
      * 9.
      */
     private E add(int hash, E key) {
+        int index = hash % table.length;
+        Node<E> newNode = new Node<>(hash, key, null);
+        if (table[index] == null) {
+            table[index] = newNode;
+        } else {
+            Node<E> node = table[index];
+            Node<E> prev = null;
+            while (node != null) {
+                if ((node.hash == hash) && (node.key == key || node.key.equals(key))) {
+                    return key;
+                }
+                prev = node;
+                node = node.next;
+            }
+            prev.next = newNode;
+        }
+        size++;
+        linkLastNode(newNode);
+        if (size >= table.length * LOAD_FACTOR) {
+            resize();
+        }
         return null;
     }
 
@@ -88,12 +153,25 @@ public class LinkedHashSet<E> implements Set<E> {
      * 5. 아니라면 이후 노드의 앞 노드를 이전 노드로 연결해줌 + gc
      */
     private void unlinkNode(Node<E> node) {
-
+        Node<E> prevNode = node.prevLink;
+        Node<E> nextNode = node.nextLink;
+        if (prevNode == null) {
+            head = nextNode;
+        } else {
+            prevNode.nextLink = nextNode;
+            node.prevLink = null;
+        }
+        if (nextNode == null) {
+            tail = prevNode;
+        } else {
+            nextNode.prevLink = prevNode;
+            node.nextLink = null;
+        }
     }
 
     @Override
     public boolean remove(Object o) {
-        return false;
+        return remove(hash(o), o) != null;
     }
 
     /**
@@ -109,22 +187,56 @@ public class LinkedHashSet<E> implements Set<E> {
      * 10. 저장한 삭제된 노드를 반환
      */
     private Object remove(int hash, Object key) {
-        return null;
+        int index = hash % table.length;
+        Node<E> node = table[index];
+        Node<E> removedNode = null;
+        Node<E> prevNode = null;
+        if (node == null) {
+            return null;
+        }
+        while (node != null) {
+            if ((node.hash == hash) && (node.key == key || node.key.equals(key))) {
+                removedNode = node;
+                if (prevNode == null) {
+                    table[index] = node.next;
+                } else {
+                    prevNode.next = node.next;
+                }
+                unlinkNode(removedNode);
+                node = null;
+                size--;
+                break;
+            }
+            prevNode = node;
+            node = node.next;
+        }
+        return removedNode;
     }
 
     @Override
     public boolean contains(Object o) {
+        if (size < 1) {
+            return false;
+        }
+        int index = hash(o) % table.length;
+        Node<E> node = table[index];
+        while (node != null) {
+            if (Objects.equals(o, node.key)) {
+                return true;
+            }
+            node = node.next;
+        }
         return false;
     }
 
     @Override
     public boolean isEmpty() {
-        return false;
+        return size == 0;
     }
 
     @Override
     public int size() {
-        return 0;
+        return size;
     }
 
     /**
@@ -133,6 +245,10 @@ public class LinkedHashSet<E> implements Set<E> {
      */
     @Override
     public void clear() {
-
+        if (table != null && size > 0) {
+            Arrays.fill(table, null);
+            size = 0;
+        }
+        head = tail = null;
     }
 }
